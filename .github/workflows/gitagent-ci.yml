@@ -91,7 +91,6 @@ jobs:
 
           gitagent run . \
             --adapter lyzr \
-            --workflow pr-review-flow \
             --input pr_diff="$(cat pr.diff)" \
             --input pr_title="$PR_TITLE" \
             --input pr_description="$PR_DESCRIPTION" \
