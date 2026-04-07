@@ -9,87 +9,79 @@ on:
 
 jobs:
   validate-agent:
-    name: Validate GitAgent
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: "20"
 
-      - name: Install GitAgent CLI
-        run: npm install -g @shreyaskapale/gitagent@latest
+      - name: Validate agent
+        run: npx @open-gitagent/gitagent@latest validate
 
-      - name: Validate agent structure
-        run: gitagent validate
-
-      - name: Validate compliance (SOD)
-        run: gitagent validate --compliance
-
-      - name: Show agent info
-        run: gitagent info
+      - name: Validate compliance
+        run: npx @open-gitagent/gitagent@latest validate --compliance
 
   pr-review:
-    name: Run PR Review Agent
     runs-on: ubuntu-latest
     needs: validate-agent
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: "20"
 
-      - name: Install GitAgent CLI
-        run: npm install -g @shreyaskapale/gitagent@latest
-
-      # 🔍 DEBUG: Check environment variables
       - name: Debug ENV
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          LYZR_API_KEY: ${{ secrets.LYZR_API_KEY }}
         run: |
           echo "Checking environment variables..."
           if [ -z "$LYZR_API_KEY" ]; then echo "❌ LYZR_API_KEY missing"; else echo "✅ LYZR_API_KEY present"; fi
           if [ -z "$GEMINI_API_KEY" ]; then echo "❌ GEMINI_API_KEY missing"; else echo "✅ GEMINI_API_KEY present"; fi
 
-      # 📄 Get PR diff
       - name: Get PR diff
         run: |
           git fetch origin main || true
           git diff origin/main...HEAD > pr.diff || true
-          echo "Diff size:"
-          wc -l pr.diff || true
+          echo "===== DIFF PREVIEW ====="
+          head -n 50 pr.diff || true
+          echo "========================"
 
-      # 🔍 DEBUG: Show diff
-      - name: Debug Diff
-        run: |
-          echo "==== PR DIFF START ===="
-          cat pr.diff || true
-          echo "==== PR DIFF END ===="
-
-      # 🚀 Run GitAgent with Lyzr
-      - name: Run GitAgent PR Review
+      - name: Run GitAgent
         continue-on-error: true
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           LYZR_API_KEY: ${{ secrets.LYZR_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_REPO: ${{ github.repository }}
-          PR_NUMBER: ${{ github.event.pull_request.number || '0' }}
-          PR_TITLE: ${{ github.event.pull_request.title || 'Manual Run' }}
-          PR_DESCRIPTION: ${{ github.event.pull_request.body || 'Manual Trigger' }}
-
         run: |
-          echo "🚀 Running GitAgent with Lyzr \..."
+          echo "🚀 Running GitAgent..."
 
-          gitagent run . --adapter lyzr || echo "⚠️ GitAgent execution failed"
+          echo "Perform a security-first pull request review on the following code changes:" > final_prompt.txt
+          echo "" >> final_prompt.txt
+          cat pr.diff >> final_prompt.txt
+          echo "" >> final_prompt.txt
+          echo "Identify:" >> final_prompt.txt
+          echo "- Security vulnerabilities" >> final_prompt.txt
+          echo "- Code quality issues" >> final_prompt.txt
+          echo "- Best practice violations" >> final_prompt.txt
+          echo "" >> final_prompt.txt
+          echo "Finally, provide a clear approval decision (APPROVE / REJECT)." >> final_prompt.txt
+
+          echo "===== PROMPT PREVIEW ====="
+          head -n 40 final_prompt.txt
+          echo "=========================="
+
+          npx @open-gitagent/gitagent@latest run \
+            --dir . \
+            --adapter lyzr \
+            -p "$(cat final_prompt.txt)"
 
       - name: Done
         run: echo "✅ Workflow completed"

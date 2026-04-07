@@ -10,7 +10,7 @@ as inline comments. It never approves its own reviews (fact-checker handles appr
 
 ```bash
 # Install gitagent CLI
-npm install -g @shreyaskapale/gitagent
+npx @open-gitagent/gitagent@latest
 
 # Validate the agent definition
 gitagent validate --compliance

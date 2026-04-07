@@ -1,126 +1,150 @@
-# 🤖 PR Review Agent — GitAgent Hackathon Submission
+# 🤖 PR Review Agent — Reva
 
-> **Reva** — A git-native AI code reviewer that lives in your repo, reviews every PR automatically, and enforces segregation of duties so the reviewer can never approve its own findings.
+> **Reva** is a git-native AI code reviewer that lives inside your repository, automatically reviews every pull request, and enforces **Segregation of Duties (SOD)** so reviewers can never approve their own findings.
 
-Built with the [gitagent](https://gitagent.sh) open standard for the **GitAgent Hackathon by Lyzr AI**.
+Built using the **GitAgent open standard** for the GitAgent Hackathon by Lyzr AI × HackCulture.
 
 ---
 
-## What It Does
+## 🚀 What It Does
 
 Every time a pull request is opened or updated, Reva:
 
-1. 🔐 **Scans for security issues first** — secrets, SQL injection, XSS, auth bypasses
-2. 🐛 **Reviews code quality** — bugs, unhandled errors, N+1 queries, missing tests
-3. 📝 **Posts structured inline comments** — with severity ratings and code fixes
-4. 🤝 **Hands off to the fact-checker** — a separate approver agent that makes the final merge decision (SOD enforced)
-5. 📋 **Logs everything** — full audit trail in `memory/runtime/dailylog.md`
+1. 🔐 **Security-first analysis**
+   Detects secrets, SQL injection, XSS, auth bypasses, and unsafe patterns
 
-## Why This Wins
+2. 🧠 **Code quality review**
+   Identifies bugs, edge cases, performance issues, and missing validations
 
-| Feature | What We Use |
-|--------|-------------|
-| Full gitagent standard | `agent.yaml`, `SOUL.md`, `RULES.md`, `DUTIES.md`, `AGENTS.md` |
-| Multi-skill workflow | `security-scan` → `code-review` → `review-summary` |
-| Multi-agent SOD | `pr-review-agent` (reviewer) + `fact-checker` (approver) |
-| SkillsFlow workflow | `workflows/pr-review-flow.yaml` with `depends_on` and conditions |
-| MCP-compatible tools | `tools/github-pr.yaml`, `tools/bash-runner.yaml` |
-| Lifecycle hooks | `hooks/bootstrap.md`, `hooks/teardown.md` |
-| Persistent memory | `memory/runtime/dailylog.md` |
-| Knowledge base | `knowledge/code-review-guide.md` |
-| CI/CD integration | `.github/workflows/gitagent-ci.yml` |
-| Compliance | `compliance/audit-checklist.md` |
-| Calibration examples | `examples/sample-review.md` |
+3. 📝 **Structured feedback**
+   Produces clear findings with severity levels and actionable fixes
 
-## Repo Structure
+4. ⚖️ **Segregation of Duties (SOD)**
+   A separate **fact-checker agent** makes the final approval decision
 
-```
-pr-review-agent/
-├── agent.yaml                          # Manifest + SOD compliance config
-├── SOUL.md                             # Reva's identity, personality, values
-├── RULES.md                            # Hard constraints (must-always/never)
-├── DUTIES.md                           # SOD policy — reviewer ≠ approver
-├── AGENTS.md                           # Framework-agnostic run instructions
-├── skills/
-│   ├── code-review/SKILL.md            # Bug, quality, performance analysis
-│   ├── security-scan/SKILL.md          # Secrets, injection, auth vulnerabilities
-│   └── review-summary/SKILL.md        # Consolidate findings, post PR comment
-├── tools/
-│   ├── github-pr.yaml                  # GitHub PR API tool schema
-│   └── bash-runner.yaml               # Shell command tool
-├── workflows/
-│   └── pr-review-flow.yaml            # SkillsFlow: scan → review → summarize → handoff
-├── agents/
-│   └── fact-checker/                  # Sub-agent: approver (SOD-separated)
-│       ├── agent.yaml
-│       ├── SOUL.md
-│       └── DUTIES.md
-├── knowledge/
-│   └── code-review-guide.md           # Bug patterns, security patterns, good code signals
-├── memory/runtime/
-│   └── dailylog.md                    # Persistent audit trail
-├── hooks/
-│   ├── bootstrap.md                   # Startup: load knowledge, verify env
-│   └── teardown.md                    # Shutdown: flush logs, clean up
-├── compliance/
-│   └── audit-checklist.md            # Full compliance verification list
-├── examples/
-│   └── sample-review.md              # Calibration: SQL injection + hardcoded secret example
-├── .github/workflows/
-│   └── gitagent-ci.yml               # CI: validate on push, review on PR
-└── .gitignore                         # Keeps secrets and runtime state local
-```
-
-## Quick Start
-
-```bash
-# 1. Install gitagent CLI
-npm install -g @shreyaskapale/gitagent
-
-# 2. Clone this agent
-git clone https://github.com/your-username/pr-review-agent
-cd pr-review-agent
-
-# 3. Set up environment (never committed)
-cp .env.example .env
-# Edit .env with your ANTHROPIC_API_KEY and GITHUB_TOKEN
-
-# 4. Validate the agent definition
-gitagent validate --compliance
-
-# 5. See agent info
-gitagent info
-
-# 6. Export to system prompt (works with any LLM)
-gitagent export --format system-prompt
-
-# 7. Run with Lyzr adapter
-gitagent run . --adapter lyzr
-```
-
-## GitHub Actions Setup
-
-Add these secrets to your repo (`Settings → Secrets → Actions`):
-- `ANTHROPIC_API_KEY` — Your Anthropic API key
-- `GITHUB_TOKEN` — Auto-provided by GitHub Actions
-
-Then push a PR — Reva will review it automatically. ✅
-
-## Segregation of Duties
-
-```
-PR Opened → Reva (reviewer) analyzes → fact-checker (approver) decides → Merge/Block
-```
-
-The reviewer **cannot** approve. The approver **cannot** analyze code.
-This is enforced by `gitagent validate --compliance`. Deployment is blocked if violated.
-
-## Built With
-
-- [gitagent](https://gitagent.sh) — git-native agent standard
-- [Lyzr AI](https://lyzr.ai) — agent runtime
-- [Anthropic Claude](https://anthropic.com) — underlying LLM
+5. 📊 **Audit logging**
+   Maintains a persistent review trail for traceability and compliance
 
 ---
 
-*Submitted to the GitAgent Hackathon by Lyzr AI × HackCulture*
+## 🏆 Why This Stands Out
+
+| Capability             | Implementation                                                |
+| ---------------------- | ------------------------------------------------------------- |
+| GitAgent Standard      | `agent.yaml`, `SOUL.md`, `RULES.md`, `DUTIES.md`, `AGENTS.md` |
+| Multi-skill pipeline   | `security-scan → code-review → review-summary`                |
+| Multi-agent SOD        | reviewer agent + fact-checker approver                        |
+| Workflow orchestration | `workflows/pr-review-flow.yaml`                               |
+| Tooling                | GitHub PR + shell tools                                       |
+| Memory & audit         | `memory/runtime/dailylog.md`                                  |
+| CI Integration         | GitHub Actions workflow                                       |
+| Compliance             | audit checklist + validation                                  |
+
+---
+
+## 📁 Project Structure
+
+```
+pr-review-agent/
+├── agent.yaml
+├── SOUL.md
+├── RULES.md
+├── DUTIES.md
+├── AGENTS.md
+├── skills/
+├── tools/
+├── workflows/
+├── agents/fact-checker/
+├── knowledge/
+├── memory/runtime/
+├── hooks/
+├── compliance/
+├── examples/
+├── .github/workflows/gitagent-ci.yml
+└── .gitignore
+```
+
+---
+
+## ⚡ Quick Start
+
+```bash
+# Validate agent
+npx @open-gitagent/gitagent@latest validate
+
+# Run agent (Lyzr adapter)
+npx @open-gitagent/gitagent@latest run \
+  --dir . \
+  --adapter lyzr
+```
+
+---
+
+## 🔧 Environment Setup
+
+Create a `.env` file (never commit this):
+
+```
+GEMINI_API_KEY=your_api_key
+LYZR_API_KEY=your_api_key
+GITHUB_TOKEN=your_token
+```
+
+---
+
+## ⚙️ GitHub Actions Integration
+
+1. Go to **Settings → Secrets → Actions**
+2. Add:
+
+* `GEMINI_API_KEY`
+* `LYZR_API_KEY`
+* `GITHUB_TOKEN` (auto-provided)
+
+3. Create or update a PR → Reva runs automatically ✅
+
+---
+
+## 🔐 Segregation of Duties (SOD)
+
+```
+PR → Reviewer Agent → Fact-Checker Agent → Decision
+```
+
+* Reviewer: analyzes code
+* Fact-checker: approves/rejects
+* No overlap = enforced trust model
+
+---
+
+## 🧠 Architecture
+
+Reva follows a **modular agent design**:
+
+* **SOUL** → identity & reasoning style
+* **RULES** → hard constraints
+* **DUTIES** → role separation (SOD)
+* **Skills** → reusable capabilities
+* **Tools** → external actions
+* **Workflows** → execution flow
+
+---
+
+## 🛠 Built With
+
+* GitAgent (open agent standard)
+* Lyzr AI (execution adapter)
+* Gemini API (LLM backend)
+* GitHub Actions (CI integration)
+
+---
+
+## 📌 Submission
+
+* Git-native AI agent for automated PR review
+* Security-first design with compliance focus
+* Demonstrates multi-agent architecture with SOD
+
+---
+
+*Submitted for GitAgent Hackathon — Lyzr AI × HackCulture*
