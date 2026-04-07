@@ -89,12 +89,7 @@ jobs:
         run: |
           echo "🚀 Running GitAgent with Lyzr (verbose mode)..."
 
-          gitagent run . \
-            --adapter lyzr \
-            --input pr_diff="$(cat pr.diff)" \
-            --input pr_title="$PR_TITLE" \
-            --input pr_description="$PR_DESCRIPTION" \
-            --verbose || echo "⚠️ GitAgent execution failed"
+          gitagent run . --adapter lyzr --verbose || echo "⚠️ GitAgent execution failed"
 
       - name: Done
         run: echo "✅ Workflow completed"
