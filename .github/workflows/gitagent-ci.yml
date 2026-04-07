@@ -20,7 +20,7 @@ jobs:
           node-version: '20'
 
       - name: Install gitagent CLI
-        run: npm install -g gitagent
+        run: npm install -g @shreyaskapale/gitagent
 
       - name: Validate agent spec
         run: gitagent validate
@@ -48,7 +48,7 @@ jobs:
           node-version: '20'
 
       - name: Install gitagent CLI
-        run: npm install -g gitagent
+        run: npm install -g @shreyaskapale/gitagent
 
       - name: Get PR diff
         id: pr-diff

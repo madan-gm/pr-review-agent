@@ -75,7 +75,7 @@ pr-review-agent/
 
 ```bash
 # 1. Install gitagent CLI
-npm install -g gitagent
+npm install -g @shreyaskapale/gitagent
 
 # 2. Clone this agent
 git clone https://github.com/your-username/pr-review-agent
