@@ -22,7 +22,7 @@ jobs:
           node-version: "20"
 
       - name: Install GitAgent CLI
-        run: npm install -g @shreyaskapale/gitagent
+        run: npm install -g @shreyaskapale/gitagent@latest
 
       - name: Validate agent structure
         run: gitagent validate
@@ -50,8 +50,16 @@ jobs:
           node-version: "20"
 
       - name: Install GitAgent CLI
-        run: npm install -g @shreyaskapale/gitagent
+        run: npm install -g @shreyaskapale/gitagent@latest
 
+      # 🔍 DEBUG: Check environment variables
+      - name: Debug ENV
+        run: |
+          echo "Checking environment variables..."
+          if [ -z "$LYZR_API_KEY" ]; then echo "❌ LYZR_API_KEY missing"; else echo "✅ LYZR_API_KEY present"; fi
+          if [ -z "$GEMINI_API_KEY" ]; then echo "❌ GEMINI_API_KEY missing"; else echo "✅ GEMINI_API_KEY present"; fi
+
+      # 📄 Get PR diff
       - name: Get PR diff
         run: |
           git fetch origin main || true
@@ -59,10 +67,19 @@ jobs:
           echo "Diff size:"
           wc -l pr.diff || true
 
+      # 🔍 DEBUG: Show diff
+      - name: Debug Diff
+        run: |
+          echo "==== PR DIFF START ===="
+          cat pr.diff || true
+          echo "==== PR DIFF END ===="
+
+      # 🚀 Run GitAgent with Lyzr
       - name: Run GitAgent PR Review
         continue-on-error: true
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          LYZR_API_KEY: ${{ secrets.LYZR_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPO: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.pull_request.number || '0' }}
@@ -70,13 +87,15 @@ jobs:
           PR_DESCRIPTION: ${{ github.event.pull_request.body || 'Manual Trigger' }}
 
         run: |
-          echo "Running GitAgent..."
+          echo "🚀 Running GitAgent with Lyzr (verbose mode)..."
+
           gitagent run . \
             --adapter lyzr \
             --workflow pr-review-flow \
             --input pr_diff="$(cat pr.diff)" \
             --input pr_title="$PR_TITLE" \
-            --input pr_description="$PR_DESCRIPTION" || true
+            --input pr_description="$PR_DESCRIPTION" \
+            --verbose || echo "⚠️ GitAgent execution failed"
 
       - name: Done
-        run: echo "Workflow completed"
+        run: echo "✅ Workflow completed"
