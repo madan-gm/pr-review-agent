@@ -1,28 +1,27 @@
-name: GitAgent CI — Validate & Review
+name: GitAgent CI — Validate & PR Review
 
 on:
-  push:
-    branches: [main, dev, staging]
   pull_request:
     types: [opened, synchronize, reopened]
 
 jobs:
-  # ── Validate the agent definition on every push ──────────────────────
   validate-agent:
-    name: Validate GitAgent Definition
+    name: Validate GitAgent
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
 
-      - name: Install gitagent CLI
+      - name: Install GitAgent CLI
         run: npm install -g @shreyaskapale/gitagent
 
-      - name: Validate agent spec
+      - name: Validate agent structure
         run: gitagent validate
 
       - name: Validate compliance (SOD)
@@ -31,51 +30,46 @@ jobs:
       - name: Show agent info
         run: gitagent info
 
-  # ── Run PR review on every pull request ──────────────────────────────
   pr-review:
-    name: Automated PR Review (Reva)
+    name: Run PR Review Agent
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
     needs: validate-agent
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repo
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
 
-      - name: Install gitagent CLI
+      - name: Install GitAgent CLI
         run: npm install -g @shreyaskapale/gitagent
 
       - name: Get PR diff
         id: pr-diff
         run: |
+          git fetch origin ${{ github.base_ref }}
           git diff origin/${{ github.base_ref }}...HEAD > pr.diff
-          echo "diff_lines=$(wc -l < pr.diff)" >> $GITHUB_OUTPUT
+          echo "Diff size:"
+          wc -l pr.diff
 
-      - name: Run PR Review Agent
+      - name: Run GitAgent PR Review
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPO: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_TITLE: ${{ github.event.pull_request.title }}
           PR_DESCRIPTION: ${{ github.event.pull_request.body }}
+
         run: |
-          gitagent run . --adapter lyzr \
+          gitagent run . \
+            --adapter lyzr \
+            --workflow pr-review-flow \
             --input pr_diff="$(cat pr.diff)" \
             --input pr_title="$PR_TITLE" \
-            --input pr_description="$PR_DESCRIPTION" \
-            --input repo_language="$(cat .gitagent/lang 2>/dev/null || echo 'auto-detect')" \
-            --workflow pr-review-flow
-
-      - name: Upload findings artifact
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: pr-review-findings
-          path: findings.json
-          retention-days: 30
+            --input pr_description="$PR_DESCRIPTION"

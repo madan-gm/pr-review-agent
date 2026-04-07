@@ -2,14 +2,11 @@ spec_version: "0.1.0"
 name: pr-review-agent
 version: 1.0.0
 description: A git-native AI agent that reviews pull requests for security vulnerabilities, code quality, and best practices — with SOD-enforced approval.
-
 author: GitAgent Hackathon Team
 license: MIT
 
 model:
-  preferred: claude-sonnet-4-20250514
-  fallback:
-    - claude-haiku-4-20250307
+  preferred: gemini-2.5-flash
 
 skills:
   - code-review

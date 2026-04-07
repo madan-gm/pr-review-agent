@@ -1,9 +1,13 @@
 # Secrets — never commit
 .env
-.env.*
+.env.local
+.env.production
 *.pem
 *.key
 *.p12
+
+# Allow example file
+!.env.example
 
 # Runtime state — local only
 .gitagent/
