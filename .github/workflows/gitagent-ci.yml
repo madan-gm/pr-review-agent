@@ -1,0 +1,81 @@
+name: GitAgent CI — Validate & Review
+
+on:
+  push:
+    branches: [main, dev, staging]
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  # ── Validate the agent definition on every push ──────────────────────
+  validate-agent:
+    name: Validate GitAgent Definition
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install gitagent CLI
+        run: npm install -g gitagent
+
+      - name: Validate agent spec
+        run: gitagent validate
+
+      - name: Validate compliance (SOD)
+        run: gitagent validate --compliance
+
+      - name: Show agent info
+        run: gitagent info
+
+  # ── Run PR review on every pull request ──────────────────────────────
+  pr-review:
+    name: Automated PR Review (Reva)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    needs: validate-agent
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install gitagent CLI
+        run: npm install -g gitagent
+
+      - name: Get PR diff
+        id: pr-diff
+        run: |
+          git diff origin/${{ github.base_ref }}...HEAD > pr.diff
+          echo "diff_lines=$(wc -l < pr.diff)" >> $GITHUB_OUTPUT
+
+      - name: Run PR Review Agent
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_DESCRIPTION: ${{ github.event.pull_request.body }}
+        run: |
+          gitagent run . --adapter lyzr \
+            --input pr_diff="$(cat pr.diff)" \
+            --input pr_title="$PR_TITLE" \
+            --input pr_description="$PR_DESCRIPTION" \
+            --input repo_language="$(cat .gitagent/lang 2>/dev/null || echo 'auto-detect')" \
+            --workflow pr-review-flow
+
+      - name: Upload findings artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-review-findings
+          path: findings.json
+          retention-days: 30

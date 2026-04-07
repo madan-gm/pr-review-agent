@@ -1,0 +1,17 @@
+spec_version: "0.1.0"
+name: fact-checker
+version: 1.0.0
+description: >
+  Approver sub-agent. Verifies the reviewer's findings are complete and makes
+  the final PR approval decision. Never performs code analysis itself.
+
+model:
+  preferred: claude-haiku-4-20250307
+
+compliance:
+  segregation_of_duties:
+    roles:
+      - id: approver
+        permissions: [approve, reject, escalate]
+    assignments:
+      fact-checker: [approver]

@@ -1,0 +1,48 @@
+name: github-pr
+description: Interact with GitHub Pull Requests — post comments, post inline review comments, and request changes.
+version: 1.0.0
+
+input_schema:
+  type: object
+  properties:
+    action:
+      type: string
+      description: "Action to perform: post_comment, post_inline_comment, request_changes"
+      enum:
+        - post_comment
+        - post_inline_comment
+        - request_changes
+    repo:
+      type: string
+      description: "Repository in owner/repo format"
+    pr_number:
+      type: integer
+      description: Pull request number
+    body:
+      type: string
+      description: Markdown comment body
+    path:
+      type: string
+      description: File path for inline comment (relative to repo root)
+    line:
+      type: integer
+      description: Line number for inline comment
+    commit_id:
+      type: string
+      description: Commit SHA for inline comment anchor
+  required:
+    - action
+    - repo
+    - pr_number
+    - body
+
+implementation:
+  type: http
+  url: https://api.github.com
+  method: POST
+
+annotations:
+  requires_confirmation: false
+  read_only: false
+  compliance_sensitive: true
+  cost: low

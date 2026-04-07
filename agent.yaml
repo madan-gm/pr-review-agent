@@ -1,0 +1,60 @@
+spec_version: "0.1.0"
+name: pr-review-agent
+version: 1.0.0
+description: A git-native AI agent that reviews pull requests for security vulnerabilities, code quality, and best practices — with SOD-enforced approval.
+
+author: GitAgent Hackathon Team
+license: MIT
+
+model:
+  preferred: claude-sonnet-4-20250514
+  fallback:
+    - claude-haiku-4-20250307
+
+skills:
+  - code-review
+  - security-scan
+  - review-summary
+
+tools:
+  - github-pr
+  - bash-runner
+
+agents:
+  fact-checker:
+    description: Approver sub-agent — verifies findings and makes the final PR approval decision. Never performs code analysis itself.
+    delegation:
+      mode: explicit
+      triggers:
+        - review_complete
+        - escalation_required
+
+compliance:
+  risk_tier: standard
+  supervision:
+    human_in_the_loop: conditional
+    kill_switch: true
+    escalation_triggers:
+      - custom: "Hardcoded secret or credential found in diff"
+      - custom: "SQL injection or XSS vulnerability detected"
+      - custom: "Authentication or authorization logic modified"
+      - custom: "PR diff exceeds 2000 lines"
+  recordkeeping:
+    audit_logging: true
+    retention_period: 1y
+    log_contents:
+      - prompts_and_responses
+      - tool_calls
+      - decision_pathways
+      - timestamps
+
+tags:
+  - code-review
+  - security
+  - pull-request
+  - devops
+  - gitagent
+
+metadata:
+  hackathon: GitAgent Hackathon by Lyzr AI
+  category: developer-tools

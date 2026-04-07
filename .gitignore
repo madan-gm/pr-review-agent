@@ -1,0 +1,19 @@
+# Secrets — never commit
+.env
+.env.*
+*.pem
+*.key
+*.p12
+
+# Runtime state — local only
+.gitagent/
+findings.json
+pr.diff
+
+# Node
+node_modules/
+npm-debug.log
+
+# OS
+.DS_Store
+Thumbs.db

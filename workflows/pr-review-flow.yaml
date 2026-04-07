@@ -1,0 +1,74 @@
+name: pr-review-flow
+description: Full automated PR review pipeline with SOD-enforced approval
+version: 1.0.0
+
+triggers:
+  - pull_request_opened
+  - pull_request_synchronize  # re-runs on new commits pushed to PR
+
+steps:
+  # ── Step 1: Security first, always ────────────────────────────────────
+  security_scan:
+    skill: security-scan
+    inputs:
+      diff: ${{ trigger.pr_diff }}
+      changed_files: ${{ trigger.changed_files }}
+
+  # ── Step 2: Escalate immediately if secrets found ──────────────────────
+  escalate_check:
+    tool: bash
+    depends_on: [security_scan]
+    conditions:
+      - ${{ steps.security_scan.outputs.escalate_immediately == true }}
+    inputs:
+      command: |
+        echo "🚨 ESCALATING: Secret or critical security issue found."
+        echo "Human review required before proceeding."
+        # Post escalation comment to PR via GitHub API
+        curl -X POST \
+          -H "Authorization: token $GITHUB_TOKEN" \
+          -H "Content-Type: application/json" \
+          https://api.github.com/repos/$GITHUB_REPO/issues/$PR_NUMBER/comments \
+          -d '{"body":"🚨 **Reva (Security Scan):** Critical security issue detected. Escalating to human reviewer. Automated review paused."}'
+
+  # ── Step 3: Code quality review ───────────────────────────────────────
+  code_review:
+    skill: code-review
+    depends_on: [security_scan]
+    conditions:
+      - ${{ steps.security_scan.outputs.escalate_immediately == false }}
+    inputs:
+      diff: ${{ trigger.pr_diff }}
+      language: ${{ trigger.repo_language }}
+      pr_description: ${{ trigger.pr_description }}
+
+  # ── Step 4: Consolidate and post summary ──────────────────────────────
+  review_summary:
+    skill: review-summary
+    depends_on: [security_scan, code_review]
+    conditions:
+      - ${{ steps.security_scan.outputs.escalate_immediately == false }}
+    inputs:
+      security_findings: ${{ steps.security_scan.outputs }}
+      code_findings: ${{ steps.code_review.outputs }}
+      pr_title: ${{ trigger.pr_title }}
+      pr_health_score: ${{ steps.code_review.outputs.pr_health_score }}
+
+  # ── Step 5: Hand off to fact-checker for approval decision ─────────────
+  handoff_to_approver:
+    agent: fact-checker
+    depends_on: [review_summary]
+    prompt: |
+      You are the approver agent (fact-checker). The reviewer agent (Reva) has completed
+      its analysis. Review the findings.json and make the final approval decision.
+      You must NOT re-analyze the code — only verify the reviewer's findings are complete
+      and decide: APPROVE, REQUEST_CHANGES, or ESCALATE_HUMAN.
+    inputs:
+      findings: ${{ steps.review_summary.outputs.findings_json }}
+      critical_count: ${{ steps.security_scan.outputs.critical_count }}
+      pr_health_score: ${{ steps.code_review.outputs.pr_health_score }}
+
+error_handling:
+  on_failure: notify
+  channel: "#code-review-alerts"
+  message: "PR Review Agent failed on ${{ trigger.pr_number }} — manual review required."

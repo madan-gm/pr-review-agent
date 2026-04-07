@@ -1,0 +1,29 @@
+name: bash-runner
+description: Execute shell commands for CI integration, posting notifications, and running validation scripts.
+version: 1.0.0
+
+input_schema:
+  type: object
+  properties:
+    command:
+      type: string
+      description: Shell command to execute (must use only allowed commands)
+    working_directory:
+      type: string
+      description: Working directory for the command
+    timeout_seconds:
+      type: integer
+      description: Timeout in seconds before killing the command
+  required:
+    - command
+
+implementation:
+  type: script
+  path: scripts/run.sh
+  runtime: bash
+
+annotations:
+  requires_confirmation: false
+  read_only: false
+  idempotent: false
+  cost: low
