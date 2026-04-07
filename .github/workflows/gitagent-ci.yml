@@ -87,9 +87,9 @@ jobs:
           PR_DESCRIPTION: ${{ github.event.pull_request.body || 'Manual Trigger' }}
 
         run: |
-          echo "🚀 Running GitAgent with Lyzr (verbose mode)..."
+          echo "🚀 Running GitAgent with Lyzr \..."
 
-          gitagent run . --adapter lyzr --verbose || echo "⚠️ GitAgent execution failed"
+          gitagent run . --adapter lyzr || echo "⚠️ GitAgent execution failed"
 
       - name: Done
         run: echo "✅ Workflow completed"
